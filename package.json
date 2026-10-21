@@ -1,0 +1,23 @@
+{
+  "name": "svg-editor-phase1",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.6"
+  },
+  "scripts": {
+    "cli": "tsx src/cli/main.ts",
+    "build": "tsc -p tsconfig.json",
+    "test": "tsx --test test/*.test.ts",
+    "check": "npm run build && npm test"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "^0.8.11"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

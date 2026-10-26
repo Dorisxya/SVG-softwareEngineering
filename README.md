@@ -1,75 +1,74 @@
-# SVG-softwareEngineering
+# SVG Editor · Phase 1
 
-TypeScript 面向对象 SVG 编辑器课程项目。
+TypeScript 面向对象 CLI SVG 编辑器。实现需求文档第一阶段；不是 VS Code 扩展，也不包含后续阶段的 box 插件或动态插件加载器。
 
-## 当前进度：第三阶段 / 可运行 CLI（约 75%）
+## 运行
 
-百分比表示约定的阶段范围，不代表精确代码量或测试覆盖率。本阶段接入终端交互和真实 SVG 文件读写，形成可以运行的应用。
+首次下载项目后，请先安装以下依赖。安装后 macOS 可双击 `run.command` 启动；脚本优先使用系统 Node，也支持本机已有的 Codex Node 运行时。
 
-已实现：
-
-- rect、circle、ellipse、line、text、g 六种图形，唯一 ID 与嵌套容器。
-- 创建、删除、移动、缩放、属性设置、分组、解散、移动归属和同级绘制顺序。
-- Command 与文档快照，失败原子性、撤销/重做及 IO 历史屏障。
-- CLI 分词、双引号参数、注释、REPL 和标准输入脚本回放。
-- SVG XML 解析和序列化、自动补 ID、真实磁盘读写。
-
-完整自动化测试套件、演示文件、最终架构自查与验收文档留到第四阶段。本次不创建或推送 final 标签。
-
-## 安装与运行
-
-需要 Node.js 22.6+，推荐 Node.js 24。
+需要 Node.js 22.6+、npm；推荐 Node.js 24。进入本目录：
 
 ```sh
 npm install
 npm run cli
 ```
 
-或者使用锁文件安装：
+交互提示符为 `svg>`，输入 `help` 查看命令，Ctrl-D 退出。脚本模式不打印提示符；发生错误继续处理后续命令，进程最终返回 1。
 
 ```sh
-pnpm install --frozen-lockfile
-pnpm cli
-```
-
-交互提示符为 `svg>`。输入 `help` 查看命令，按 Ctrl-D 退出。可复制以下命令：
-
-```text
-init 600 400
-create g scene
-create rect card 40 60 160 80 skyblue in scene
-create text label 65 105 "开始" in scene
-move scene 100 0
-undo
-tree
-save demo.svg
-read demo.svg
-show card
-```
-
-SVG 文件可在浏览器中打开。相对文件路径以程序工作目录为基准；带空格路径需加双引号。
-
-```sh
+npm run cli < examples/flowchart.commands
+npm test
+npm run check
 npm run build
 node dist/cli/main.js
-npm run check
 ```
 
-本阶段 `check` 执行严格 TypeScript 编译和源码格式检查，不代表完整功能测试。命令脚本可通过 `npm run cli < commands.txt` 回放：脚本模式不显示提示符，遇错继续处理，最终返回非零退出码。
+也可使用 pnpm，仓库附带 `pnpm-lock.yaml`。`pnpm install --frozen-lockfile` 安装后，`pnpm check` 验证。
 
-## 关键语义
+## 快速示例
 
-- 单文档模式；init/read 替换当前文档，编辑先发生在内存，只有 save 写文件。目前没有未保存确认和 status 命令。
-- save 无参数时使用上一次 read/save 的路径；init 清除路径。
-- 成功 init/read/save 或修改 canvas 后清空历史并禁止撤销重做，下一次成功编辑解禁；显示类命令不改变历史。
-- scale 同时缩放几何坐标与尺寸，CLI 缩放不修改字体大小和描边宽度。
-- g 的颜色遵循 SVG 继承，显式子属性优先。ungroup 不将组属性复制到孩子。
-- group 按原文档顺序组织成员；同父级占首个选中位置，跨父级追加到根。根级 g 按需求禁止 ungroup。
+```text
+init 800 600
+create g scene
+create rect r1 10 20 100 50 #4a90d9 in scene
+create text t1 25 50 "你好 SVG" in scene
+move scene 40 20
+undo
+redo
+tree
+save demo.svg
+```
 
-## 导入边界
+将生成的 SVG 用浏览器打开即可预览。提供 `examples/flowchart.commands` 及对应 SVG。
 
-支持六种内置形状、嵌套 g、数值或 px 的画布尺寸、viewBox 和常用展示属性。缺少 ID 时自动补号并警告，重复 ID 拒绝导入。支持 translate 与正数等比 scale 变换并归一化到坐标；字体和描边尺寸也会按导入缩放换算。
+## 已实现
 
-不支持 path、defs/use、tspan、嵌套 svg、CSS/style、旋转/矩阵/非等比变换、百分比几何单位或 DTD/实体声明。不支持的结构导致整个 read 失败，保留旧文档。源 XML 排版、注释和 transform 写法不保证原样保留。box 和动态插件加载属于后续功能阶段，本课程 Phase 1 不实现。
+- 文档：init、read、save、canvas。
+- 编辑：create、delete、move、scale、set、group、ungroup、addto、front、back。
+- 显示：tree、show、help；历史：undo、redo。
+- 六种形状：rect、circle、ellipse、line、text、g；浮点坐标，双引号参数，中文和 XML 转义。
+- 唯一 ID、外部文件自动补 ID、层级校验、失败原子性、容器递归操作、同级绘制顺序。
+- 保存采用同目录临时文件后 rename；失败不清空历史。
 
-模块及分阶段记录见 [doc/README.md](doc/README.md)。
+## 明确约定
+
+1. `scale` 缩放坐标和尺寸；CLI 缩放不改变字体、描边宽度。g 的 fill/stroke 通过 SVG 原生继承生效，子元素显式样式优先。
+2. `group` 依据原文档先序保留选中元素顺序。同父级时放在首个选中元素位置；跨父级时追加到画布根。不允许同时选祖先及其子孙。
+3. `ungroup` 按需求拒绝根级容器；嵌套容器解散后子元素占据它原来的位置。
+4. 成功的 init/read/save/canvas 修改清空历史并禁止 undo/redo，下一条成功编辑解禁。canvas 查询和显示命令不影响历史。
+5. 撤销反馈为 `undone: 原命令摘要`，重做为 `redone: 原命令摘要`，状态完整恢复。tree 不做列宽对齐，保留所需几何信息。
+6. `save path` 成功后也会记住该路径；之后可直接 `save`。init 清除路径。
+
+## SVG 导入边界
+
+支持六种内置形状、嵌套 g、width/height（数值或 px）、viewBox，以及 font-size、text-anchor 等常用展示属性。缺省几何值取 0。缺失 ID 先预留文件全部显式 ID，再补 `标签名+序号`，避免与后出现的 ID 冲突。
+
+支持 translate 和正数等比 scale 的 transform，读入时烘焙到几何坐标；同时换算导入变换所影响的字体/描边尺寸。保存后保留视觉等价的受支持信息，XML 排版及 transform 写法不会原样保留。注释会被忽略；未知 data-kind 的普通 g 保留标记并按 g 操作。
+
+不支持 path、defs/use、嵌套 svg、tspan、CSS/style、旋转/矩阵/非等比变换、百分比几何单位及 DTD/实体声明。遇到不支持的元素/属性或格式错误时，拒绝整个 read，保留当前文档和历史。不是完整 SVG 标准实现。
+
+## 架构与交付
+
+架构图、设计模式、过程记录、依赖规则和验收矩阵见 [doc/README.md](doc/README.md)。源码一类一文件，使用严格 TypeScript；测试涵盖命令行为、撤销重做、SVG 往返及真实 CLI/文件 IO。
+
+仓库保留初始化、核心模型、可运行 CLI 与最终验收的分步提交，最终版本以 `final` 标签标记。仓库地址：[Dorisxya/SVG-softwareEngineering](https://github.com/Dorisxya/SVG-softwareEngineering)。最终检查包含严格编译、49 项自动化测试和格式检查。需求文档未给出截止时间，因此无法核实截止时间要求。
